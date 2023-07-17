@@ -1,89 +1,164 @@
 <template>
-  <div>
+  <div class="task-manager">
     <!-- Task List -->
-    <h2>Task List</h2>
-    <div>
-      <label for="sort">Sort By:</label>
-      <select id="sort" v-model="sortOption" @change="fetchTasks">
-        <option value="dueDate">Due Date</option>
-        <option value="completionStatus">Completion Status</option>
-        <option value="priority">Priority</option>
-      </select>
-    </div>
-    <ul>
-      <li v-for="task in sortedTasks" :key="task.id">
-        <div>
-          <h3>{{ task.title }}</h3>
-          <p>{{ task.description }}</p>
-          <p>Due Date: {{ task.dueDate }}</p>
-          <p>Completion Status: {{ task.completionStatus }}</p>
-          <button @click="shareTask(task)">Share</button>
-          <!-- Add the Share button -->
-        </div>
-      </li>
-    </ul>
-
-    <!-- Task Reminder Notifications -->
-    <button @click="toggleNotificationList">
-      {{ showNotificationList ? "Hide Notifications" : "Show Notifications" }}
-    </button>
-    <div
-      v-if="showNotificationList && notifications.length > 0"
-      class="notifications"
-    >
+    <div class="task-list">
+      <h2>Task List</h2>
+      <div class="sort">
+        <label for="sort">Sort By:</label>
+        <select id="sort" v-model="sortOption" @change="fetchTasks">
+          <option value="dueDate">Due Date</option>
+          <option value="completionStatus">Completion Status</option>
+          <option value="priority">Priority</option>
+        </select>
+      </div>
       <ul>
+        <li v-for="task in sortedTasks" :key="task.id" class="task-item">
+          <div>
+            <h3>{{ task.title }}</h3>
+            <p>{{ task.description }}</p>
+            <p><strong>Due Date:</strong> {{ task.dueDate }}</p>
+            <p>
+              <strong>Completion Status:</strong> {{ task.completionStatus }}
+            </p>
+            <button @click="openShareModal(task)">Share</button>
+            <button @click="openDeleteConfirmation(task)">Delete</button>
+          </div>
+        </li>
         <li
-          v-for="notification in notifications"
-          :key="notification.id"
-          class="notification"
+          v-for="sharedTask in sharedTasks"
+          :key="sharedTask.id"
+          class="task-item"
         >
-          <p>{{ notification.message }}</p>
+          <div>
+            <h3>{{ sharedTask.title }}</h3>
+            <p>{{ sharedTask.description }}</p>
+            <p><strong>Due Date:</strong> {{ sharedTask.dueDate }}</p>
+            <p>
+              <strong>Completion Status:</strong>
+              {{ sharedTask.completionStatus }}
+            </p>
+            <button @click="editTask(sharedTask)">Edit</button>
+            <button @click="openDeleteConfirmation(sharedTask)">Delete</button>
+          </div>
         </li>
       </ul>
     </div>
 
-    <!-- Add/Edit Task Form -->
-    <h2 v-if="editingTask">Edit Task</h2>
-    <h2 v-else>Add Task</h2>
-    <form @submit.prevent="editingTask ? updateTask() : addTask()">
-      <div>
-        <label for="title">Title</label>
-        <input type="text" id="title" v-model="taskForm.title" />
+    <!-- Task Reminder Notifications -->
+    <div class="notification-section">
+      <button class="notification-toggle" @click="toggleNotificationList">
+        {{ showNotificationList ? "Hide Notifications" : "Show Notifications" }}
+      </button>
+      <div
+        v-if="showNotificationList && notifications.length > 0"
+        class="notifications"
+      >
+        <ul>
+          <li
+            v-for="notification in notifications"
+            :key="notification.id"
+            class="notification"
+          >
+            <p>{{ notification.message }}</p>
+            <button
+              class="notification-dismiss"
+              @click="dismissNotification(notification.id)"
+            >
+              Dismiss
+            </button>
+          </li>
+        </ul>
       </div>
-      <div>
-        <label for="description">Description</label>
-        <textarea id="description" v-model="taskForm.description"></textarea>
-      </div>
-      <div>
-        <label for="dueDate">Due Date</label>
-        <input type="date" id="dueDate" v-model="taskForm.dueDate" />
-      </div>
-      <div>
-        <label for="completionStatus">Completion Status</label>
-        <input
-          type="checkbox"
-          id="completionStatus"
-          v-model="taskForm.completionStatus"
-        />
-      </div>
-      <div>
-        <label for="priority">Priority</label>
-        <input type="number" id="priority" v-model="taskForm.priority" />
-      </div>
-      <button type="submit">{{ editingTask ? "Update" : "Add" }}</button>
-      <button v-if="editingTask" @click="cancelEdit">Cancel</button>
-    </form>
+    </div>
 
-    <!-- Share Task Form -->
-    <div v-if="selectedTask">
-      <h2>Share Task</h2>
-      <form @submit.prevent="performShareTask">
-        <div>
-          <label for="recipientEmail">Recipient Email</label>
-          <input type="email" id="recipientEmail" v-model="recipientEmail" />
+    <!-- Add/Edit Task Form -->
+    <div class="task-form">
+      <h2 v-if="editingTask">Edit Task</h2>
+      <h2 v-else>Add Task</h2>
+      <form @submit.prevent="editingTask ? updateTask() : addTask()">
+        <div class="form-group">
+          <label for="title">Title</label>
+          <input
+            type="text"
+            id="title"
+            v-model="taskForm.title"
+            class="form-input"
+          />
         </div>
-        <button type="submit">Share</button>
+        <div class="form-group">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            v-model="taskForm.description"
+            class="form-input"
+          ></textarea>
+        </div>
+        <div class="form-group">
+          <label for="dueDate">Due Date</label>
+          <input
+            type="date"
+            id="dueDate"
+            v-model="taskForm.dueDate"
+            class="form-input"
+          />
+        </div>
+        <div class="form-group">
+          <label for="completionStatus">Completion Status</label>
+          <input
+            type="checkbox"
+            id="completionStatus"
+            v-model="taskForm.completionStatus"
+          />
+        </div>
+        <div class="form-group">
+          <label for="priority">Priority</label>
+          <input
+            type="number"
+            id="priority"
+            v-model="taskForm.priority"
+            class="form-input"
+          />
+        </div>
+        <div class="form-buttons">
+          <button type="submit" class="form-button">
+            {{ editingTask ? "Update" : "Add" }}
+          </button>
+          <button v-if="editingTask" @click="cancelEdit" class="form-button">
+            Cancel
+          </button>
+        </div>
       </form>
+    </div>
+
+    <!-- Share Task Modal -->
+    <div v-if="selectedTask" class="modal-container">
+      <div class="modal">
+        <h2>Share Task</h2>
+        <form @submit.prevent="performShareTask" class="share-form">
+          <div class="form-group">
+            <label for="recipientEmail">Recipient Email</label>
+            <input
+              type="email"
+              id="recipientEmail"
+              v-model="recipientEmail"
+              class="form-input"
+            />
+          </div>
+          <div class="form-buttons">
+            <button type="submit" class="form-button">Share</button>
+            <button @click="cancelShare" class="form-button">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+    <div v-if="deleteConfirmation" class="modal-container">
+      <div class="modal">
+        <h2>Are you sure you want to delete this task?</h2>
+        <div class="modal-buttons">
+          <button @click="deleteTask(selectedTaskToDelete)">Yes</button>
+          <button @click="closeDeleteConfirmation">No</button>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -119,10 +194,15 @@ export default {
       sortOption: "dueDate",
       notifications: [],
       showNotificationList: false,
+      notificationTimeout: null,
       selectedTask: null,
       recipientEmail: "",
       db: null,
       sharedTasksRef: null,
+      sharedTasks: [],
+      showModal: false,
+      deleteConfirmation: false,
+      selectedTaskToDelete: null,
     };
   },
   computed: {
@@ -139,6 +219,31 @@ export default {
     },
   },
   methods: {
+    fetchSharedTasks() {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        const sharedTasksRef = this.db
+          .collection("sharedTasks")
+          .where("recipientId", "==", user.uid);
+
+        sharedTasksRef.onSnapshot((snapshot) => {
+          const sharedTasks = snapshot.docs.map((doc) => {
+            const sharedTaskData = doc.data();
+            return new Task(
+              doc.id,
+              sharedTaskData.title,
+              sharedTaskData.description,
+              sharedTaskData.dueDate,
+              sharedTaskData.completionStatus,
+              sharedTaskData.priority
+            );
+          });
+
+          this.sharedTasks = sharedTasks;
+        });
+      }
+    },
+
     fetchTasks() {
       const user = firebase.auth().currentUser;
       if (user) {
@@ -163,7 +268,11 @@ export default {
           this.tasks = tasks;
         });
 
-        this.sharedTasksRef.onSnapshot((snapshot) => {
+        const sharedTasksRef = this.db
+          .collection("sharedTasks")
+          .where("ownerId", "==", user.uid);
+
+        sharedTasksRef.onSnapshot((snapshot) => {
           const sharedTasksPromises = snapshot.docs.map((doc) => {
             const sharedTaskData = doc.data();
             return tasksRef.doc(sharedTaskData.taskId).get();
@@ -189,6 +298,7 @@ export default {
         });
       }
     },
+
     addTask() {
       const user = firebase.auth().currentUser;
       if (user) {
@@ -227,26 +337,14 @@ export default {
           .update(this.taskForm)
           .then(() => {
             this.resetTaskForm();
+            this.editingTask = null;
           })
           .catch((error) => {
             console.error("Error updating task: ", error);
           });
       }
     },
-    deleteTask(task) {
-      const user = firebase.auth().currentUser;
-      if (user) {
-        this.db
-          .collection("users")
-          .doc(user.uid)
-          .collection("tasks")
-          .doc(task.id)
-          .delete()
-          .catch((error) => {
-            console.error("Error deleting task: ", error);
-          });
-      }
-    },
+
     cancelEdit() {
       this.editingTask = null;
       this.resetTaskForm();
@@ -266,20 +364,38 @@ export default {
         message,
       };
       this.notifications.push(notification);
+
+      if (this.notificationTimeout) {
+        clearTimeout(this.notificationTimeout);
+      }
+
       setTimeout(() => {
         this.dismissNotification(notification.id);
       }, 5000); // Remove notification after 5 seconds (adjust as needed)
+
+      this.notificationTimeout = setTimeout(() => {
+        this.dismissNotification(notification.id);
+      }, 5000); // Adjust the duration as needed (e.g., 5000 milliseconds = 5 seconds)
     },
     dismissNotification(notificationId) {
       this.notifications = this.notifications.filter(
         (notification) => notification.id !== notificationId
       );
+      if (this.notificationTimeout) {
+        clearTimeout(this.notificationTimeout);
+      }
     },
     toggleNotificationList() {
       this.showNotificationList = !this.showNotificationList;
     },
-    shareTask(task) {
+    openShareModal(task) {
       this.selectedTask = task;
+      this.recipientEmail = "";
+      this.showModal = true;
+    },
+    closeShareModal() {
+      this.showModal = false;
+      this.selectedTask = null;
       this.recipientEmail = "";
     },
     performShareTask() {
@@ -316,7 +432,18 @@ export default {
             this.sharedTasksRef
               .add(sharedTaskData)
               .then(() => {
-                this.resetTaskForm();
+                const sharedTask = new Task(
+                  this.selectedTask.id,
+                  this.selectedTask.title,
+                  this.selectedTask.description,
+                  this.selectedTask.dueDate,
+                  this.selectedTask.completionStatus,
+                  this.selectedTask.priority
+                );
+
+                this.sharedTasks.push(sharedTask);
+                this.closeShareModal();
+                this.showNotification("Task shared successfully.");
               })
               .catch((error) => {
                 console.error("Error sharing task: ", error);
@@ -327,10 +454,44 @@ export default {
           });
       }
     },
+
+    cancelShare() {
+      this.closeShareModal();
+    },
+
+    openDeleteConfirmation(task) {
+      this.selectedTaskToDelete = task;
+      this.deleteConfirmation = true;
+    },
+
+    closeDeleteConfirmation() {
+      this.selectedTaskToDelete = null;
+      this.deleteConfirmation = false;
+    },
+
+    deleteTask(task) {
+      const user = firebase.auth().currentUser;
+      if (user) {
+        this.db
+          .collection("users")
+          .doc(user.uid)
+          .collection("tasks")
+          .doc(task.id)
+          .delete()
+          .then(() => {
+            this.closeDeleteConfirmation();
+            this.showNotification("Task deleted successfully.");
+          })
+          .catch((error) => {
+            console.error("Error deleting task: ", error);
+          });
+      }
+    },
   },
   mounted() {
     this.db = firebase.firestore();
     this.sharedTasksRef = this.db.collection("sharedTasks");
+    this.fetchSharedTasks();
 
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
@@ -355,29 +516,29 @@ export default {
 </script>
 
 <style>
-/* Task List */
-h2 {
-  color: #333;
-  font-size: 20px;
-  margin-bottom: 10px;
+/* Global Styles */
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
 }
 
-label {
-  display: block;
-  margin-bottom: 5px;
+/* Task Manager Styles */
+.task-manager {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
 }
 
-select,
-input[type="text"],
-input[type="date"],
-input[type="email"],
-textarea {
-  width: 100%;
-  padding: 5px;
-  margin-bottom: 10px;
-  border: 1px solid #ccc;
+/* Task List Styles */
+.task-list {
+  background-color: #f4f4f4;
+  padding: 20px;
   border-radius: 4px;
-  box-sizing: border-box;
+}
+
+.sort {
+  margin-bottom: 10px;
 }
 
 ul {
@@ -385,30 +546,53 @@ ul {
   padding: 0;
 }
 
-li {
+.task-item {
   margin-bottom: 20px;
-  border: 1px solid #ccc;
   padding: 10px;
+  border: 1px solid #ccc;
   border-radius: 4px;
 }
 
-li div {
+.task-item div {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+
+h2 {
+  font-size: 24px;
+  margin-bottom: 10px;
+}
+
+p {
+  margin-bottom: 5px;
 }
 
 button {
   padding: 5px 10px;
   border: none;
   border-radius: 4px;
-  background-color: #333;
+  background-color: #4caf50;
   color: #fff;
   cursor: pointer;
 }
 
-.notifications {
+/* Task Reminder Notifications Styles */
+.notification-section {
   margin-top: 10px;
+}
+
+.notification-toggle {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4caf50;
+  color: #fff;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+.notifications {
   border: 1px solid #ccc;
   padding: 10px;
   border-radius: 4px;
@@ -420,29 +604,74 @@ button {
   background-color: #f9f9f9;
 }
 
-/* Add/Edit Task Form */
-form div {
-  margin-bottom: 10px;
-}
-
-button[type="submit"] {
-  background-color: #333;
-  color: #fff;
-  cursor: pointer;
-}
-
-button[type="submit"]:hover {
-  background-color: #555;
-}
-
-button[type="submit"],
-button {
+.notification-dismiss {
   padding: 5px 10px;
   border: none;
   border-radius: 4px;
-  background-color: #333;
+  background-color: #4caf50;
+  color: #fff;
+  cursor: pointer;
+  margin-left: 10px;
+}
+
+/* Add/Edit Task Form Styles */
+.task-form {
+  margin-top: 20px;
+}
+
+form {
+  background-color: #f4f4f4;
+  padding: 20px;
+  border-radius: 4px;
+}
+
+.form-group {
+  margin-bottom: 10px;
+}
+
+label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.form-input {
+  width: 100%;
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+.form-buttons {
+  margin-top: 10px;
+}
+
+.form-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4caf50;
   color: #fff;
   cursor: pointer;
   margin-right: 10px;
+}
+
+/* Modal Styles */
+.modal-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.modal {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 4px;
 }
 </style>

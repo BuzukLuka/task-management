@@ -52,41 +52,43 @@ export default {
 
 <style scoped>
 .signup-container {
-  max-width: 300px;
+  max-width: 400px;
   margin: 0 auto;
   padding: 20px;
   border: 1px solid #ccc;
-  border-radius: 5px;
-  background-color: #f9f9f9;
+  border-radius: 4px;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
 }
 
 form {
   display: flex;
   flex-direction: column;
-  align-items: center;
 }
 
-input {
-  margin-bottom: 10px;
-  padding: 5px;
-  width: 100%;
-}
-
-button {
+input[type="email"],
+input[type="password"] {
   padding: 10px;
-  width: 100%;
-  background-color: #007bff;
-  color: #fff;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button[type="submit"],
+button.login-button {
+  padding: 10px;
   border: none;
+  border-radius: 4px;
+  background-color: #333;
+  color: #fff;
   cursor: pointer;
 }
 
 button.login-button {
-  margin-top: 10px;
-  background-color: #dc3545;
-}
-
-button:hover {
-  background-color: #0056b3;
+  background-color: #fff;
+  color: #333;
 }
 </style>
